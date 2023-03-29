@@ -1,6 +1,8 @@
 const express = require('express')
 const app = express()
 
+app.use(express.json())
+
 let persons = [
 	{
 		"id": 1,
@@ -19,6 +21,18 @@ let persons = [
 	}
 ]
 
+const LIMIT = 10000
+
+const getRandomInt = () =>  Math.floor(Math.random() * LIMIT)
+
+const generateId = () => {
+  const cand = getRandomInt()
+	while (persons.some(person => person.id === cand)) {
+		cand = getRandomInt()
+	}
+  return cand
+}
+
 app.get('/info', (req, res) => {
 	const time = new Date()
 	res.send(`<p>Phonebook has currently ${persons.length} numbers saved in it.</p> <p>${time}</p>`)
@@ -36,6 +50,23 @@ app.get('/api/persons/:id', (request, response) => {
 	} else {
 		response.status(404).end()
 	}
+})
+
+app.post('/api/persons', (request, response) => {
+	const id = generateId()
+  const body = request.body
+	if (!(body.name && body.number)) {
+		response.status(400).json({
+			error: 'Missing name or number.'
+		})
+	}
+	const person = {
+		id: id,
+		name: body.name,
+		number: body.number
+	}
+  persons = persons.concat(person)
+  response.json(person)
 })
 
 app.delete('/api/persons/:id', (request, response) => {
