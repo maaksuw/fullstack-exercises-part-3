@@ -53,15 +53,18 @@ app.get('/api/persons/:id', (request, response) => {
 })
 
 app.post('/api/persons', (request, response) => {
-	const id = generateId()
   const body = request.body
 	if (!(body.name && body.number)) {
-		response.status(400).json({
+		return response.status(400).json({
 			error: 'Missing name or number.'
+		})
+	} else if (persons.some(person => person.name === body.name)) {
+		return response.status(400).json({
+			error: 'Name already in phonebook.'
 		})
 	}
 	const person = {
-		id: id,
+		id: generateId(),
 		name: body.name,
 		number: body.number
 	}
