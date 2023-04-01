@@ -1,7 +1,11 @@
 const express = require('express')
-const app = express()
 const morgan = require('morgan')
 const cors = require('cors')
+
+require('dotenv').config()
+
+const app = express()
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -17,6 +21,7 @@ app.use(morgan(function (tokens, req, res) {
   ].join(' ')
 }))
 
+// Jätän vielä tämän tähän
 let persons = [
 	{
 		"id": 1,
@@ -35,57 +40,41 @@ let persons = [
 	}
 ]
 
-const LIMIT = 10000
-
-const getRandomInt = () =>  Math.floor(Math.random() * LIMIT)
-
-const generateId = () => {
-  const cand = getRandomInt()
-	while (persons.some(person => person.id === cand)) {
-		cand = getRandomInt()
-	}
-  return cand
-}
-
+// Käyttää vielä persons-taulukkoa
 app.get('/info', (req, res) => {
 	const time = new Date()
 	res.send(`<p>Phonebook has currently ${persons.length} numbers saved in it.</p> <p>${time}</p>`)
 })
 
 app.get('/api/persons', (req, res) => {
-	res.json(persons)
+	Person.find({}).then(persons => {
+		res.json(persons)
+	})
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const person = persons.find(person => person.id === id)
-  if (person) {
-		response.json(person)
-	} else {
-		response.status(404).end()
-	}
+	Person.findById(request.params.id).then(person => {
+    response.json(person)
+  })
 })
 
 app.post('/api/persons', (request, response) => {
-  const body = request.body
+	const body = request.body
 	if (!(body.name && body.number)) {
 		return response.status(400).json({
 			error: 'Missing name or number.'
 		})
-	} else if (persons.some(person => person.name === body.name)) {
-		return response.status(400).json({
-			error: 'Name already in phonebook.'
-		})
 	}
-	const person = {
-		id: generateId(),
+	const person = new Person({
 		name: body.name,
 		number: body.number
-	}
-  persons = persons.concat(person)
-  response.json(person)
+	})
+ 	person.save().then(savedPerson => {
+		response.json(savedPerson)
+	})
 })
 
+// Käyttää vielä persons-taulukkoa
 app.delete('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
 	const found = persons.some(person => person.id === id)
@@ -97,7 +86,7 @@ app.delete('/api/persons/:id', (request, response) => {
 	}
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`)
 })
