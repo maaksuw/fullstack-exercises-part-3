@@ -21,29 +21,10 @@ app.use(morgan(function (tokens, req, res) {
   ].join(' ')
 }))
 
-// Jätän vielä tämän tähän
-let persons = [
-	{
-		"id": 1,
-		"name": "Makkis Makkarahauva",
-		"number": "111-111-111"
-	},
-	{
-		"id": 2,
-		"name": "Pupu Jussikainen",
-		"number": "222-222-222"
-	},
-	{
-		"id": 3,
-		"name": "Misse Missenen",
-		"number": "333-333-333"
-	}
-]
-
-// Käyttää vielä persons-taulukkoa
-app.get('/info', (request, response) => {
+app.get('/info', async (request, response) => {
 	const time = new Date()
-	response.send(`<p>Phonebook has currently ${persons.length} numbers saved in it.</p> <p>${time}</p>`)
+	const count = await Person.find().estimatedDocumentCount()
+	response.send(`<p>Phonebook has currently ${count} numbers saved in it.</p> <p>${time}</p>`)
 })
 
 app.get('/api/persons', (request, response) => {
