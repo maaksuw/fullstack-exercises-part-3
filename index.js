@@ -41,21 +41,27 @@ let persons = [
 ]
 
 // Käyttää vielä persons-taulukkoa
-app.get('/info', (req, res) => {
+app.get('/info', (request, response) => {
 	const time = new Date()
-	res.send(`<p>Phonebook has currently ${persons.length} numbers saved in it.</p> <p>${time}</p>`)
+	response.send(`<p>Phonebook has currently ${persons.length} numbers saved in it.</p> <p>${time}</p>`)
 })
 
-app.get('/api/persons', (req, res) => {
+app.get('/api/persons', (request, response) => {
 	Person.find({}).then(persons => {
-		res.json(persons)
+		response.json(persons)
 	})
 })
 
-app.get('/api/persons/:id', (request, response) => {
-	Person.findById(request.params.id).then(person => {
-    response.json(person)
-  })
+app.get('/api/persons/:id', (request, response, next) => {
+	Person.findById(request.params.id)
+		.then(person => {
+			if (person) {
+				response.json(person)
+			} else {
+				response.status(404).end()
+			}
+  	})
+		.catch(error => next(error))
 })
 
 app.post('/api/persons', (request, response) => {
@@ -74,19 +80,25 @@ app.post('/api/persons', (request, response) => {
 	})
 })
 
-// Käyttää vielä persons-taulukkoa
-app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-	const found = persons.some(person => person.id === id)
-	if (found) {
-		persons = persons.filter(person => person.id !== id)
-  	response.status(204).end()
-	} else {
-		response.status(404).end()
-	}
+app.delete('/api/persons/:id', (request, response, next) => {
+	Person.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`)
 })
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'Malformatted id.' })
+  }
+  next(error)
+}
+
+app.use(errorHandler)
