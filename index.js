@@ -67,17 +67,25 @@ app.get('/api/persons/:id', (request, response, next) => {
 app.post('/api/persons', (request, response) => {
 	const body = request.body
 	if (!(body.name && body.number)) {
-		return response.status(400).json({
-			error: 'Missing name or number.'
-		})
+		return response.status(400).json({ error: 'Missing name or number.' })
 	}
 	const person = new Person({
 		name: body.name,
 		number: body.number
 	})
- 	person.save().then(savedPerson => {
+		person.save().then(savedPerson => {
 		response.json(savedPerson)
 	})
+})
+
+app.put('/api/persons/:id', (request, response) => {
+	const newPerson = request.body
+	const id = request.params.id
+	Person.findByIdAndUpdate(id, newPerson, { new: true })
+		.then(updatedPerson => {
+			response.json(updatedPerson)
+		})
+		.catch(error => next(error))
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
